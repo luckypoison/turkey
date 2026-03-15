@@ -1,0 +1,14 @@
+{
+  "name": "turkey",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "bun run --cwd packages/cli dev",
+    "dev:web": "bun run --cwd apps/web dev",
+    "build": "bun run build --filter=./packages/*",
+    "cli": "bun run --cwd packages/cli start"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

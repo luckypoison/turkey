@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "home": "Home",
+    "config": "Config"
+  },
+  "home": {
+    "title": "Turkey",
+    "subtitle": "Context aggregation and task breakdown",
+    "aggregate": "Aggregate context",
+    "aggregateDesc": "Add inputs (conversation, image URL, or page URL). The agent will extract information and produce a Markdown report.",
+    "inputType": "Type",
+    "inputValue": "Value",
+    "addInput": "Add input",
+    "generateReport": "Generate report",
+    "reportPlaceholder": "Report will appear here (Markdown)",
+    "inputTypeConversation": "Conversation / text",
+    "inputTypeImage": "Image (URL or base64)",
+    "inputTypeUrl": "Web page URL",
+    "sourcesCount": "Sources aggregated: {count}",
+    "sourceItem": "[{type}] {title}",
+    "breakdown": "Break down tasks",
+    "breakdownDesc": "Enter a goal to get subtasks (uses LLM)",
+    "goalPlaceholder": "e.g. Complete user login flow improvements",
+    "goalLabel": "Goal",
+    "subtasksLabel": "Subtasks",
+    "run": "Run",
+    "loading": "Loading…",
+    "error": "Error"
+  },
+  "config": {
+    "title": "API keys & config",
+    "pathLabel": "Config file",
+    "setKey": "Key",
+    "setValue": "Value",
+    "add": "Add",
+    "listHeader": "Configured keys (masked)",
+    "empty": "No keys configured.",
+    "delete": "Delete"
+  }
+}

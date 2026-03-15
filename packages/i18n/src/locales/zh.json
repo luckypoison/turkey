@@ -1,0 +1,52 @@
+{
+  "cli": {
+    "name": "turkey",
+    "description": "上下文聚合与任务拆解 — 程序员工作流助手",
+    "version": "0.0.1",
+    "aggregate": {
+      "description": "聚合当前上下文（Issue、PR 等）",
+      "sourcesCount": "聚合来源数: {count}",
+      "sourceItem": "[{type}] {title}"
+    },
+    "breakdown": {
+      "description": "根据上下文与目标拆解为子任务（需配置 OPENAI_API_KEY）",
+      "goalArg": "本次要完成的目标描述",
+      "labelGoal": "目标",
+      "labelSubtasks": "子任务"
+    },
+    "task": {
+      "priorityHigh": "高",
+      "priorityMedium": "中",
+      "priorityLow": "低",
+      "minutes": "约 {minutes} 分钟"
+    },
+    "config": {
+      "description": "管理 API Key 与选项（保存在本地配置文件中）",
+      "set": {
+        "description": "设置某个 API Key 或选项",
+        "keyArg": "键名（如 OPENAI_API_KEY、GITHUB_TOKEN）",
+        "valueArg": "值（如 API Key）",
+        "success": "已设置 {key}。"
+      },
+      "get": {
+        "description": "查看某键的值（默认脱敏，可用 --show 显示完整）",
+        "keyArg": "键名",
+        "notSet": "未设置: {key}",
+        "value": "{key}={value}"
+      },
+      "list": {
+        "description": "列出已配置的键（值脱敏显示）",
+        "empty": "暂无配置。使用: turkey config set <key> <value>",
+        "header": "已配置的键（值已脱敏）："
+      },
+      "unset": {
+        "description": "删除某个键",
+        "keyArg": "键名",
+        "success": "已删除 {key}。"
+      },
+      "path": "配置文件: {path}",
+      "pathDescription": "显示配置文件路径",
+      "showFlag": "显示完整值（默认脱敏）"
+    }
+  }
+}

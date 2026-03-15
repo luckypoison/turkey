@@ -1,0 +1,40 @@
+{
+  "nav": {
+    "home": "首页",
+    "config": "配置"
+  },
+  "home": {
+    "title": "Turkey",
+    "subtitle": "上下文聚合与任务拆解",
+    "aggregate": "聚合上下文",
+    "aggregateDesc": "添加多种输入（对话文本、图片链接或网页链接），Agent 将提取信息并生成一篇 Markdown 报告。",
+    "inputType": "类型",
+    "inputValue": "内容",
+    "addInput": "添加输入",
+    "generateReport": "生成报告",
+    "reportPlaceholder": "报告将显示在此（Markdown）",
+    "inputTypeConversation": "对话 / 文本",
+    "inputTypeImage": "图片（URL 或 base64）",
+    "inputTypeUrl": "网页 URL",
+    "sourcesCount": "聚合来源数: {count}",
+    "sourceItem": "[{type}] {title}",
+    "breakdown": "任务拆解",
+    "breakdownDesc": "输入目标，获取子任务（使用大模型）",
+    "goalPlaceholder": "例如：完成用户登录流程优化",
+    "goalLabel": "目标",
+    "subtasksLabel": "子任务",
+    "run": "执行",
+    "loading": "加载中…",
+    "error": "错误"
+  },
+  "config": {
+    "title": "API Key 与配置",
+    "pathLabel": "配置文件",
+    "setKey": "键名",
+    "setValue": "值",
+    "add": "添加",
+    "listHeader": "已配置的键（脱敏）",
+    "empty": "暂无配置。",
+    "delete": "删除"
+  }
+}

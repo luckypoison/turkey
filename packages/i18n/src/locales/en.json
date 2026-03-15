@@ -1,0 +1,52 @@
+{
+  "cli": {
+    "name": "turkey",
+    "description": "Context aggregation and task breakdown — developer workflow assistant",
+    "version": "0.0.1",
+    "aggregate": {
+      "description": "Aggregate current context (issues, PRs, etc.)",
+      "sourcesCount": "Sources aggregated: {count}",
+      "sourceItem": "[{type}] {title}"
+    },
+    "breakdown": {
+      "description": "Break down into subtasks from context and goal (requires OPENAI_API_KEY)",
+      "goalArg": "Goal description for this run",
+      "labelGoal": "Goal",
+      "labelSubtasks": "Subtasks"
+    },
+    "task": {
+      "priorityHigh": "high",
+      "priorityMedium": "medium",
+      "priorityLow": "low",
+      "minutes": "~{minutes}min"
+    },
+    "config": {
+      "description": "Manage API keys and options (stored in config file)",
+      "set": {
+        "description": "Set an API key or option",
+        "keyArg": "Key name (e.g. OPENAI_API_KEY, GITHUB_TOKEN)",
+        "valueArg": "Value (e.g. your API key)",
+        "success": "Set {key}."
+      },
+      "get": {
+        "description": "Print value for a key (masked unless --show)",
+        "keyArg": "Key name",
+        "notSet": "Key not set: {key}",
+        "value": "{key}={value}"
+      },
+      "list": {
+        "description": "List configured keys (values masked)",
+        "empty": "No keys configured. Use: turkey config set <key> <value>",
+        "header": "Configured keys (values masked):"
+      },
+      "unset": {
+        "description": "Remove a key",
+        "keyArg": "Key name",
+        "success": "Unset {key}."
+      },
+      "path": "Config file: {path}",
+      "pathDescription": "Show config file path",
+      "showFlag": "Show full value (default: masked)"
+    }
+  }
+}
