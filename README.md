@@ -8,7 +8,7 @@ Developer workflow assistant: **context aggregation and task breakdown**. CLI an
 |-------|--------|--------|
 | **Runtime** | Bun | Fast, native TS; works with Node ecosystem |
 | **Language** | TypeScript | Shared types across core, CLI, and Web |
-| **Structure** | Monorepo (workspaces) | `packages/core` = logic only; `packages/cli` / future `apps/web` = I/O and UI |
+| **Structure** | Monorepo (workspaces) | `packages/core` = logic only; `packages/cli` / `apps/web` = I/O and UI |
 | **CLI** | Commander | Stable, easy to add subcommands |
 | **Web** | Next.js 14 (App Router) | Same features as CLI: config, aggregate, breakdown; uses `@turkey/core`, `@turkey/config`, `@turkey/llm` |
 
@@ -52,12 +52,14 @@ turkey/
 │   └── cli/            # CLI entry, depends on @turkey/core, @turkey/config, @turkey/i18n, @turkey/llm
 │       └── src/
 └── apps/
-    └── web/            # Next.js app: config, aggregate, breakdown (en/zh)
+    └── web/            # Next.js app: config, sidebar + workspaces, aggregate report (en/zh)
         ├── app/
-        │   ├── api/    # config, aggregate, breakdown routes
-        │   ├── config/
+        │   ├── api/    # config, aggregate, aggregate-report (JSON + stream) routes
+        │   ├── config/ # config page
+        │   ├── Sidebar.tsx
+        │   ├── WorkspaceModal.tsx
         │   └── page.tsx
-        └── lib/
+        └── lib/        # lightweight i18n for Web
 ```
 
 ## Usage
@@ -78,7 +80,7 @@ bun run cli config set GITHUB_TOKEN ghp_xxx
 bun run cli config list
 bun run cli config path
 
-# Web app (same features: config, aggregate, breakdown; en/zh)
+# Web app (config + workspaces + aggregate report; en/zh)
 bun run dev:web
 # Then open http://localhost:3000
 
@@ -120,20 +122,22 @@ The `breakdown` command uses an LLM from the shared **@turkey/llm** package (Kim
 
 ## Aggregate report (ReAct agent)
 
-The **Aggregate context** flow supports multiple input types and produces a single **Markdown report**:
+The **Aggregate context** flow supports multiple input types and produces a single **Markdown report**, with the agent’s reasoning streamed to the UI:
 
 - **Input types**: `conversation` (text), `image` (URL or base64), `url` (web page).
 - **Process**: A **ReAct agent** (LangGraph `createReactAgent`) chooses which **skill** to run for each input, then synthesizes one report. Skills use the same LLM (Kimi/Qwen/OpenAI from config) to extract information.
 - **Stack**: `@turkey/aggregate-agent` uses **LangChain** (`@langchain/core`, `@langchain/openai`) and **LangGraph** (`@langchain/langgraph` prebuilt `createReactAgent`). The chat model is created from `@turkey/llm` provider config (base URL + API key).
-
-Web: add one or more inputs (type + value) on the home page and click **Generate report** to run the agent and see the Markdown output.
+  - Progress: `/api/aggregate-report/stream` exposes the agent’s reasoning and tool calls as **server-sent events**.
+  - Final report: returned as Markdown and rendered on the Web UI with proper formatting.
 
 ## Web app
 
-The app in `apps/web` implements the same features as the CLI:
+The app in `apps/web` focuses on configuration, workspaces, and aggregate reports:
 
-- **Config** (`/config`): Add/remove API keys (same file as CLI: `~/.config/turkey/config.json`). Shows config file path and masked list.
-- **Aggregate** (home): Add multiple inputs (conversation, image URL, or page URL); **Generate report** runs the ReAct agent and shows the Markdown report.
-- **Breakdown** (home): Enter a goal, run to get subtasks (uses LLM; reads API keys from config or env).
+- **Sidebar**: shows **Workspaces** and a **History** list of past aggregate reports (stored locally for now).  
+  - Click **`+ Add workspace`** to open a popup where you can add multiple sources and generate a report.
+- **Workspace popup**: add sources (conversation, image URL, web URL), watch **live agent progress**, and see the final **Markdown** report.
+- **Config page** (`/config`): Add/remove API keys (same file as CLI: `~/.config/turkey/config.json`). Shows config file path and masked list.
 
-Run with `bun run dev:web` from the repo root, then open http://localhost:3000. Use the nav to switch between Home and Config; use the locale switcher (EN / 中文) for language.
+Run with `bun run dev:web` from the repo root, then open http://localhost:3000.  
+Use the nav to switch between Home and Config; use the locale switcher (EN / 中文) for language; use the sidebar to manage workspaces and browse history.
