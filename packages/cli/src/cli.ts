@@ -41,12 +41,19 @@ const staticFetcher: ContextFetcher = {
 };
 
 async function runAggregate(fetchers: ContextFetcher[], config: AggregatorConfig): Promise<AggregatedContext> {
-  return aggregateContext(fetchers, config);
+  const startedAt = Date.now();
+  console.log("[cli:aggregate] start, fetchers:", fetchers.length);
+  const ctx = await aggregateContext(fetchers, config);
+  console.log("[cli:aggregate] done in", Date.now() - startedAt, "ms, sources:", ctx.sources.length);
+  return ctx;
 }
 
 async function runBreakdown(context: AggregatedContext, goal: string, locale: Locale): Promise<void> {
+  console.log("[cli:breakdown] start, goal:", goal, "sources:", context.sources.length);
+  const startedAt = Date.now();
   const llm = createLLMAdapter();
   const result = await breakdownTasks(context, goal, llm);
+  console.log("[cli:breakdown] LLM finished in", Date.now() - startedAt, "ms, tasks:", result.tasks.length);
   const priorityKey = (p: string) => `cli.task.priority${p.charAt(0).toUpperCase() + p.slice(1)}`;
   console.log("\n" + t("cli.breakdown.labelGoal", locale) + ":", result.goal);
   console.log("\n" + t("cli.breakdown.labelSubtasks", locale) + ":");

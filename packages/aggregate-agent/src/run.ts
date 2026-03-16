@@ -4,7 +4,7 @@
 
 import { applyConfigToEnv } from "@turkey/config";
 import { getProviderConfig } from "@turkey/llm";
-import type { AggregateInput, AggregateReportResult } from "./types";
+import type { AggregateInput, AggregateReportResult, RunAggregateReportOptions } from "./types";
 import { createAggregateTools } from "./skills";
 
 const SYSTEM_PROMPT = `You are an assistant that aggregates information from multiple inputs into one Markdown report.
@@ -30,13 +30,33 @@ function buildUserMessage(inputs: AggregateInput[]): string {
   return `Process the following ${inputs.length} input(s) and produce one Markdown report.\n\nInputs:\n${lines.join("\n")}\n\nUse the appropriate tool for each input, then write the final report.`;
 }
 
-export async function runAggregateReport(inputs: AggregateInput[]): Promise<AggregateReportResult> {
+function emitProgress(options: RunAggregateReportOptions | undefined, stage: string, message: string) {
+  options?.onProgress?.({
+    stage,
+    message,
+    ts: new Date().toISOString(),
+  });
+}
+
+export async function runAggregateReport(
+  inputs: AggregateInput[],
+  options?: RunAggregateReportOptions
+): Promise<AggregateReportResult> {
   if (inputs.length === 0) {
     return { report: "# Aggregate Report\n\nNo inputs provided." };
   }
 
+  console.log("[agent] start, inputs:", inputs.map((i) => i.type));
+  emitProgress(options, "agent", `start, inputs: ${inputs.map((i) => i.type).join(", ")}`);
+  const overallStart = Date.now();
+
   applyConfigToEnv();
   const config = getProviderConfig();
+  console.log("[agent] provider config:", {
+    model: config.model,
+    baseUrl: config.baseUrl,
+  });
+  emitProgress(options, "agent", `provider: ${config.model} @ ${config.baseUrl}`);
 
   const { ChatOpenAI } = await import("@langchain/openai");
   const { createReactAgent } = await import("@langchain/langgraph/prebuilt");
@@ -49,7 +69,9 @@ export async function runAggregateReport(inputs: AggregateInput[]): Promise<Aggr
     temperature: 0.2,
   });
 
-  const tools = createAggregateTools(llm);
+  const tools = createAggregateTools(llm, options?.onProgress);
+  console.log("[agent] tools:", tools.map((t: { name: string }) => t.name));
+  emitProgress(options, "agent", `tools ready: ${tools.map((t: { name: string }) => t.name).join(", ")}`);
   const agent = createReactAgent({ llm, tools, prompt: SYSTEM_PROMPT });
 
   const stream = await agent.stream(
@@ -58,15 +80,21 @@ export async function runAggregateReport(inputs: AggregateInput[]): Promise<Aggr
   );
 
   let lastContent = "";
+  let step = 0;
   for await (const chunk of stream) {
+    step += 1;
     const state = chunk as { messages?: Array<{ content?: string | unknown[] }> };
     const msgs = state.messages ?? [];
     const last = msgs[msgs.length - 1];
+    console.log("[agent] step", step, "messages in state:", msgs.length);
+    emitProgress(options, "agent", `step ${step}, messages: ${msgs.length}`);
     if (last?.content != null) {
       lastContent = typeof last.content === "string" ? last.content : String((last.content as unknown[])?.[0] ?? "");
     }
   }
 
   const report = lastContent.trim() || "# Aggregate Report\n\nNo content generated.";
+  console.log("[agent] finished in", Date.now() - overallStart, "ms, report length:", report.length);
+  emitProgress(options, "agent", `finished in ${Date.now() - overallStart}ms`);
   return { report };
 }

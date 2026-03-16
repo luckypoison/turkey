@@ -7,17 +7,45 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import type { AggregateProgressEvent } from "./types";
 
 const EXTRACT_SYSTEM = `You extract key information from the given content and return only a concise Markdown snippet (bullet points or short paragraphs). No preamble.`;
 
-export function createExtractFromConversationTool(llm: BaseChatModel) {
+type ProgressHandler = (event: AggregateProgressEvent) => void;
+
+function emitProgress(onProgress: ProgressHandler | undefined, stage: string, message: string) {
+  if (!onProgress) return;
+  onProgress({
+    stage,
+    message,
+    ts: new Date().toISOString(),
+  });
+}
+
+export function createExtractFromConversationTool(llm: BaseChatModel, onProgress?: ProgressHandler) {
   return tool(
     async ({ text }) => {
+      const startedAt = Date.now();
+      console.log("[tool:conversation] start, length:", text.length);
+      emitProgress(onProgress, "tool", `extract_from_conversation start (len=${text.length})`);
       const res = await llm.invoke([
         new SystemMessage(EXTRACT_SYSTEM),
         new HumanMessage(`Extract key information, decisions, and action items from this conversation:\n\n${text}`),
       ]);
-      return typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      const out =
+        typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      console.log(
+        "[tool:conversation] done in",
+        Date.now() - startedAt,
+        "ms, output length:",
+        out.length
+      );
+      emitProgress(
+        onProgress,
+        "tool",
+        `extract_from_conversation done in ${Date.now() - startedAt}ms (out=${out.length})`
+      );
+      return out;
     },
     {
       name: "extract_from_conversation",
@@ -29,12 +57,15 @@ export function createExtractFromConversationTool(llm: BaseChatModel) {
   );
 }
 
-export function createExtractFromImageTool(llm: BaseChatModel) {
+export function createExtractFromImageTool(llm: BaseChatModel, onProgress?: ProgressHandler) {
   return tool(
     async ({ image_ref }) => {
       // image_ref can be URL or base64 data URL
       const isUrl = image_ref.startsWith("http") || image_ref.startsWith("data:");
       if (!isUrl) return "Invalid image reference: must be a URL or base64 data URL.";
+      const startedAt = Date.now();
+      console.log("[tool:image] start, ref:", image_ref.slice(0, 100));
+      emitProgress(onProgress, "tool", "extract_from_image start");
       const res = await llm.invoke([
         new SystemMessage(EXTRACT_SYSTEM),
         new HumanMessage({
@@ -44,7 +75,20 @@ export function createExtractFromImageTool(llm: BaseChatModel) {
           ] as unknown as HumanMessage["content"],
         }),
       ]);
-      return typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      const out =
+        typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      console.log(
+        "[tool:image] done in",
+        Date.now() - startedAt,
+        "ms, output length:",
+        out.length
+      );
+      emitProgress(
+        onProgress,
+        "tool",
+        `extract_from_image done in ${Date.now() - startedAt}ms (out=${out.length})`
+      );
+      return out;
     },
     {
       name: "extract_from_image",
@@ -56,11 +100,14 @@ export function createExtractFromImageTool(llm: BaseChatModel) {
   );
 }
 
-export function createFetchAndExtractUrlTool(llm: BaseChatModel) {
+export function createFetchAndExtractUrlTool(llm: BaseChatModel, onProgress?: ProgressHandler) {
   return tool(
     async ({ url }) => {
       let text: string;
       try {
+        const startedFetch = Date.now();
+        console.log("[tool:url] fetching:", url);
+        emitProgress(onProgress, "tool", `fetch_and_extract_url fetching: ${url}`);
         const res = await fetch(url, { headers: { "User-Agent": "Turkey-Aggregate/1.0" } });
         if (!res.ok) return `Failed to fetch URL (${res.status}): ${url}`;
         const html = await res.text();
@@ -72,14 +119,41 @@ export function createFetchAndExtractUrlTool(llm: BaseChatModel) {
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 30000);
+        console.log(
+          "[tool:url] fetched and normalized html, length:",
+          text.length,
+          "in",
+          Date.now() - startedFetch,
+          "ms"
+        );
+        emitProgress(
+          onProgress,
+          "tool",
+          `fetch_and_extract_url fetched in ${Date.now() - startedFetch}ms (text=${text.length})`
+        );
       } catch (e) {
         return `Error fetching URL: ${e instanceof Error ? e.message : String(e)}`;
       }
+      const startedAt = Date.now();
+      emitProgress(onProgress, "tool", "fetch_and_extract_url extracting with LLM");
       const res = await llm.invoke([
         new SystemMessage(EXTRACT_SYSTEM),
         new HumanMessage(`Extract key information from this web page content (URL: ${url}):\n\n${text}`),
       ]);
-      return typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      const out =
+        typeof res.content === "string" ? res.content : String((res.content as unknown[])?.[0] ?? "");
+      console.log(
+        "[tool:url] done in",
+        Date.now() - startedAt,
+        "ms, output length:",
+        out.length
+      );
+      emitProgress(
+        onProgress,
+        "tool",
+        `fetch_and_extract_url done in ${Date.now() - startedAt}ms (out=${out.length})`
+      );
+      return out;
     },
     {
       name: "fetch_and_extract_url",
@@ -91,10 +165,10 @@ export function createFetchAndExtractUrlTool(llm: BaseChatModel) {
   );
 }
 
-export function createAggregateTools(llm: BaseChatModel) {
+export function createAggregateTools(llm: BaseChatModel, onProgress?: ProgressHandler) {
   return [
-    createExtractFromConversationTool(llm),
-    createExtractFromImageTool(llm),
-    createFetchAndExtractUrlTool(llm),
+    createExtractFromConversationTool(llm, onProgress),
+    createExtractFromImageTool(llm, onProgress),
+    createFetchAndExtractUrlTool(llm, onProgress),
   ];
 }

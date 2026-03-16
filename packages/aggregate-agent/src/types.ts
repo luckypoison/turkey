@@ -14,3 +14,13 @@ export interface AggregateReportResult {
   report: string;
   /** Markdown content. */
 }
+
+export type AggregateProgressEvent = {
+  stage: string;
+  message: string;
+  ts: string;
+};
+
+export interface RunAggregateReportOptions {
+  onProgress?: (event: AggregateProgressEvent) => void;
+}
